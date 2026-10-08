@@ -1,0 +1,1576 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANDAL - AI Search Companion</title>
+
+<style>
+:root {
+    --bg: #050505;
+    --panel: #0d0b09;
+    --orange: #ff7900;
+    --orange-light: #ffb15c;
+    --orange-bright: #ff9b26;
+    --text: #f7f4ef;
+    --muted: #888078;
+    --line: rgba(255, 132, 24, .28);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-x: hidden;
+}
+
+button, input, select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--orange-light);
+    outline-offset: 4px;
+}
+
+/* BACKGROUND */
+
+.background {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+    background:
+        radial-gradient(ellipse at 50% 45%,
+        rgba(255, 112, 0, .055), transparent 44%),
+        #050505;
+}
+
+.light {
+    position: absolute;
+    width: 65%;
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        #ff6500,
+        #ffd09a,
+        #ff7900,
+        transparent
+    );
+    opacity: .85;
+    filter: blur(.5px);
+    box-shadow:
+        0 0 8px #ff7900,
+        0 0 22px #ff7900,
+        0 0 45px rgba(255, 115, 0, .75);
+    animation: orange-line-glow 3s ease-in-out infinite alternate;
+}
+
+.light-top {
+    top: 13%;
+    left: -16%;
+    transform: rotate(-28deg);
+}
+
+.light-bottom {
+    bottom: 12%;
+    right: -17%;
+    transform: rotate(-28deg);
+    animation-delay: 1.2s;
+}
+
+.light::after {
+    content: "";
+    position: absolute;
+    inset: -5px 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 177, 92, .65),
+        transparent
+    );
+    filter: blur(9px);
+}
+
+@keyframes orange-line-glow {
+    from {
+        opacity: .45;
+        filter: brightness(.8) blur(1px);
+    }
+    to {
+        opacity: 1;
+        filter: brightness(1.8) blur(.3px);
+    }
+}
+
+/* HEADER */
+
+header {
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 35px;
+    border-bottom: 1px solid rgba(255, 132, 24, .13);
+    background: rgba(5, 5, 5, .78);
+    backdrop-filter: blur(14px);
+    position: relative;
+    z-index: 5;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.brand-icon {
+    width: 39px;
+    height: 39px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: #080604;
+    background: linear-gradient(135deg, #ffd09a, #ff7900 65%, #c64c00);
+    box-shadow: 0 0 18px rgba(255, 121, 0, .38);
+    font-size: 24px;
+    font-weight: 900;
+    font-style: italic;
+}
+
+.brand small {
+    display: block;
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    color: #9e9389;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.header-btn {
+    border: 1px solid rgba(255, 145, 50, .2);
+    background: rgba(255, 255, 255, .025);
+    color: #e9e1d8;
+    padding: 10px 15px;
+    border-radius: 10px;
+    transition: .3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange-light);
+    box-shadow: 0 0 16px rgba(255, 121, 0, .14);
+}
+
+.header-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 76px;
+    bottom: 0;
+    width: 76px;
+    border-right: 1px solid rgba(255, 132, 24, .13);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 17px;
+    padding: 24px 0;
+    background: rgba(5, 5, 5, .72);
+    z-index: 4;
+}
+
+.side-button {
+    width: 45px;
+    height: 45px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: #81776d;
+    transition: .3s;
+}
+
+.side-button svg {
+    width: 21px;
+    height: 21px;
+}
+
+.side-button:hover,
+.side-button.active {
+    color: var(--orange-light);
+    background: rgba(255, 121, 0, .1);
+    border-color: rgba(255, 121, 0, .36);
+    box-shadow: 0 0 20px rgba(255, 121, 0, .1);
+}
+
+.side-spacer {
+    flex: 1;
+}
+
+/* MAIN */
+
+main {
+    min-height: calc(100vh - 76px);
+    margin-left: 76px;
+    padding: 45px 25px 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content {
+    width: min(760px, 100%);
+    text-align: center;
+    position: relative;
+    margin: auto;
+    padding-bottom: 20px;
+}
+
+.hero-logo {
+    width: 76px;
+    height: 76px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 20px;
+    border: 1px solid rgba(255, 153, 55, .72);
+    border-radius: 23px;
+    background: linear-gradient(145deg, #21140a, #0c0907);
+    box-shadow:
+        0 0 20px rgba(255, 121, 0, .24),
+        inset 0 0 22px rgba(255, 121, 0, .1);
+    animation: orange-logo-pulse 3s ease-in-out infinite;
+}
+
+.hero-logo svg {
+    width: 46px;
+    height: 46px;
+    filter: drop-shadow(0 0 7px rgba(255, 121, 0, .7));
+}
+
+@keyframes orange-logo-pulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 121, 0, .22),
+                    inset 0 0 15px rgba(255, 121, 0, .06);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(255, 121, 0, .48),
+                    inset 0 0 25px rgba(255, 121, 0, .17);
+    }
+}
+
+h1 {
+    font-size: clamp(43px, 7vw, 68px);
+    letter-spacing: 9px;
+    font-weight: 850;
+    line-height: 1.1;
+    background: linear-gradient(180deg, #fff4e6, #ffb15c 65%, #ff7900);
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    filter: drop-shadow(0 0 16px rgba(255, 121, 0, .16));
+}
+
+.subtitle {
+    margin-top: 13px;
+    color: #a69a8d;
+    font-size: 15px;
+    letter-spacing: .6px;
+}
+
+/* SEARCH */
+
+.searchbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(650px, 100%);
+    min-height: 66px;
+    margin: 36px auto 0;
+    padding: 9px 11px 9px 20px;
+    border: 1px solid rgba(255, 142, 38, .43);
+    border-radius: 17px;
+    background: rgba(16, 12, 9, .91);
+    box-shadow:
+        0 0 14px rgba(255, 121, 0, .09),
+        inset 0 0 16px rgba(255, 121, 0, .025);
+    transition: .35s;
+}
+
+.searchbar:focus-within {
+    border-color: var(--orange-light);
+    box-shadow:
+        0 0 12px rgba(255, 121, 0, .28),
+        0 0 35px rgba(255, 121, 0, .14),
+        inset 0 0 14px rgba(255, 121, 0, .07);
+}
+
+.search-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--orange-light);
+}
+
+.searchbar input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: white;
+    font-size: 15px;
+}
+
+.searchbar input::placeholder {
+    color: #80756a;
+}
+
+.searchbar input:focus-visible {
+    outline: none;
+}
+
+.icon-btn {
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 155, 65, .22);
+    border-radius: 12px;
+    background: rgba(255, 121, 0, .07);
+    color: var(--orange-light);
+    transition: .3s;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 121, 0, .2);
+    border-color: var(--orange);
+    box-shadow: 0 0 16px rgba(255, 121, 0, .23);
+}
+
+.icon-btn svg {
+    width: 21px;
+    height: 21px;
+}
+
+.search-submit {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 13px;
+    color: #160b02;
+    background: linear-gradient(135deg, #ffd09a, #ff951f 50%, #ff6800);
+    box-shadow: 0 0 18px rgba(255, 121, 0, .35);
+    transition: .3s;
+}
+
+.search-submit:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow:
+        0 0 15px #ff7900,
+        0 0 35px rgba(255, 121, 0, .58);
+}
+
+.search-submit svg {
+    width: 22px;
+    height: 22px;
+}
+
+.tagline {
+    margin: 20px 0 27px;
+    color: #8d8175;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+}
+
+.tagline span {
+    color: var(--orange-light);
+    padding: 0 5px;
+}
+
+/* VOICE SECTION */
+
+.voice-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wave-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 36px;
+    margin-bottom: 14px;
+}
+
+.soundwaves {
+    height: 35px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.soundwaves i {
+    display: block;
+    width: 3px;
+    height: 8px;
+    border-radius: 6px;
+    background: linear-gradient(to top, #ff6500, #ffd09a);
+    box-shadow: 0 0 8px rgba(255, 121, 0, .55);
+    animation: wave 1s ease-in-out infinite;
+}
+
+.soundwaves i:nth-child(2n) { animation-delay: .15s; }
+.soundwaves i:nth-child(3n) { animation-delay: .3s; }
+.soundwaves i:nth-child(4n) { animation-delay: .45s; }
+.soundwaves i:nth-child(5n) { animation-delay: .6s; }
+
+@keyframes wave {
+    0%, 100% { height: 7px; opacity: .5; }
+    50% { height: 28px; opacity: 1; }
+}
+
+.big-mic {
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 184, 104, .95);
+    border-radius: 50%;
+    color: #170b02;
+    background: radial-gradient(circle at 30% 20%,
+        #ffe0b8 0%, #ffab4d 35%, #ff7900 72%, #d44a00 100%);
+    box-shadow:
+        0 0 0 8px rgba(255, 121, 0, .055),
+        0 0 0 17px rgba(255, 121, 0, .035),
+        0 0 25px rgba(255, 121, 0, .4),
+        inset 0 0 12px rgba(255, 255, 255, .22);
+    transition: .3s;
+    animation: orange-mic-pulse 2.2s ease-in-out infinite;
+}
+
+.big-mic svg {
+    width: 34px;
+    height: 34px;
+}
+
+.big-mic:hover {
+    transform: scale(1.07);
+    box-shadow:
+        0 0 0 10px rgba(255, 121, 0, .08),
+        0 0 35px rgba(255, 121, 0, .7);
+}
+
+.big-mic.listening {
+    animation: listening-pulse .8s ease-in-out infinite alternate;
+}
+
+@keyframes orange-mic-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 8px rgba(255,121,0,.05),
+                    0 0 0 17px rgba(255,121,0,.025),
+                    0 0 22px rgba(255,121,0,.3);
+    }
+    50% {
+        box-shadow: 0 0 0 11px rgba(255,121,0,.09),
+                    0 0 0 22px rgba(255,121,0,.045),
+                    0 0 38px rgba(255,121,0,.58);
+    }
+}
+
+@keyframes listening-pulse {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.08); filter: brightness(1.25); }
+}
+
+.voice-label {
+    margin-top: 23px;
+    color: #b4a79a;
+    font-size: 14px;
+}
+
+.voice-status {
+    min-height: 20px;
+    margin-top: 9px;
+    color: var(--orange-light);
+    font-size: 12px;
+}
+
+/* RESULTS */
+
+.result-panel {
+    display: none;
+    width: min(650px, 100%);
+    margin: 30px auto 0;
+    text-align: left;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(13, 10, 8, .96);
+    box-shadow: 0 0 25px rgba(255, 121, 0, .08);
+}
+
+.result-panel.show {
+    display: block;
+    animation: appear .3s ease;
+}
+
+@keyframes appear {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.result-panel h2 {
+    color: var(--orange-light);
+    font-size: 17px;
+    margin-bottom: 12px;
+}
+
+.result-panel p {
+    color: #d0c6bb;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.result-panel a {
+    color: var(--orange-light);
+    text-decoration: none;
+}
+
+.result-panel a:hover {
+    text-decoration: underline;
+}
+
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.small-action {
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #17100a;
+    color: var(--orange-light);
+}
+
+.small-action:hover {
+    border-color: var(--orange);
+}
+
+/* FOOTER */
+
+footer {
+    margin-top: 38px;
+    color: #5f574f;
+    font-size: 11px;
+    letter-spacing: .6px;
+}
+
+/* MODAL */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, .78);
+    backdrop-filter: blur(8px);
+    z-index: 20;
+}
+
+.modal-backdrop.show {
+    display: flex;
+}
+
+.modal {
+    width: min(420px, 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 25px;
+    border: 1px solid rgba(255, 145, 50, .42);
+    border-radius: 18px;
+    background: #100c09;
+    box-shadow: 0 0 35px rgba(255, 121, 0, .17);
+    animation: appear .25s ease;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.modal h2 {
+    font-size: 21px;
+    color: var(--orange-light);
+}
+
+.close-modal {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: transparent;
+    color: white;
+    font-size: 20px;
+}
+
+.modal-field {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.modal-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #c8bbae;
+    font-size: 13px;
+}
+
+.modal-field input,
+.modal-field select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 145, 50, .25);
+    border-radius: 10px;
+    background: #080706;
+    color: white;
+}
+
+.primary-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    color: #160b02;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ffd09a, #ff7900);
+    transition: .25s;
+}
+
+.primary-btn:hover {
+    box-shadow: 0 0 22px rgba(255, 121, 0, .35);
+}
+
+.helper-text {
+    margin-top: 13px;
+    color: #96897c;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-item {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid rgba(255, 145, 50, .15);
+    border-radius: 10px;
+    background: #0a0806;
+    color: #e9dfd4;
+    overflow-wrap: anywhere;
+}
+
+.history-item:hover {
+    border-color: var(--orange);
+}
+
+.empty-state {
+    padding: 20px 5px;
+    color: #95887b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+.secondary-btn {
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--orange-light);
+}
+
+/* TOAST */
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 25px;
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    max-width: calc(100vw - 30px);
+    padding: 12px 18px;
+    border: 1px solid rgba(255, 145, 50, .45);
+    border-radius: 12px;
+    background: #17100a;
+    color: #ffe2c2;
+    box-shadow: 0 0 22px rgba(255, 121, 0, .15);
+    font-size: 13px;
+    transition: .3s;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+    header {
+        height: 66px;
+        padding: 0 13px;
+    }
+
+    .brand {
+        font-size: 16px;
+        gap: 8px;
+        letter-spacing: 2px;
+    }
+
+    .brand-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .brand small {
+        font-size: 8px;
+        letter-spacing: 1px;
+    }
+
+    .header-actions {
+        gap: 6px;
+    }
+
+    .header-btn {
+        padding: 9px;
+        font-size: 12px;
+        gap: 5px;
+    }
+
+    .header-btn svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .sidebar {
+        top: 66px;
+        width: 55px;
+        gap: 13px;
+    }
+
+    .side-button {
+        width: 39px;
+        height: 39px;
+    }
+
+    main {
+        margin-left: 55px;
+        min-height: calc(100vh - 66px);
+        padding: 40px 13px 25px;
+    }
+
+    .hero-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 19px;
+        margin-bottom: 19px;
+    }
+
+    .hero-logo svg {
+        width: 39px;
+        height: 39px;
+    }
+
+    h1 {
+        font-size: clamp(35px, 10vw, 49px);
+        letter-spacing: 5px;
+    }
+
+    .subtitle {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .searchbar {
+        gap: 7px;
+        min-height: 59px;
+        margin-top: 29px;
+        padding: 7px 8px 7px 12px;
+        border-radius: 14px;
+    }
+
+    .searchbar input {
+        font-size: 13px;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .search-submit {
+        width: 39px;
+        height: 39px;
+    }
+
+    .tagline {
+        font-size: 10px;
+        letter-spacing: .8px;
+        margin-bottom: 27px;
+    }
+
+    .big-mic {
+        width: 76px;
+        height: 76px;
+    }
+
+    .light {
+        width: 95%;
+    }
+
+    footer {
+        margin-top: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="background">
+    <div class="light light-top"></div>
+    <div class="light light-bottom"></div>
+</div>
+
+<header>
+    <div class="brand">
+        <div class="brand-icon">S</div>
+        <div>
+            SANDAL
+            <small>AI SEARCH COMPANION</small>
+        </div>
+    </div>
+
+    <div class="header-actions">
+        <button class="header-btn" id="historyBtn" title="View history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round">
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M12 7v5l3 2"/>
+            </svg>
+            History
+        </button>
+
+        <button class="header-btn" id="loginBtn" title="Login">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 21a8 8 0 0 1 16 0"/>
+            </svg>
+            <span id="loginLabel">Login</span>
+        </button>
+    </div>
+</header>
+
+<aside class="sidebar">
+    <button class="side-button active" id="homeBtn" title="Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 10 9-7 9 7"/>
+            <path d="M5 9v12h14V9"/>
+            <path d="M9 21v-7h6v7"/>
+        </svg>
+    </button>
+
+    <button class="side-button" id="sideMicBtn" title="Voice search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>
+        </svg>
+    </button>
+
+    <button class="side-button" id="sideHistoryBtn" title="Search history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M12 7v5l3 2"/>
+        </svg>
+    </button>
+
+    <div class="side-spacer"></div>
+
+    <button class="side-button" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="m19.4 15 .1.1 1.4 1.1-1.5 2.6-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.9h-3l-.3-1.9a8 8 0 0 1-1.8-1l-1.7.7-1.5-2.6 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.5-2.6 1.7.7a8 8 0 0 1 1.8-1l.3-1.9h3l.3 1.9a8 8 0 0 1 1.8 1l1.7-.7 1.5 2.6-1.4 1.1a8 8 0 0 1 0 2Z"
+                  transform="translate(-1 -1)"/>
+        </svg>
+    </button>
+</aside>
+
+<main>
+    <section class="content">
+
+        <div class="hero-logo">
+            <svg viewBox="0 0 64 64" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path d="M46 13H25C15 13 12 20 18 26L42 39C51 44 47 52 38 52H16"
+                      stroke="#FF9A32" stroke-width="8"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M46 13H25C15 13 12 20 18 26L42 39C51 44 47 52 38 52H16"
+                      stroke="#FFE0B8" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      opacity=".9"/>
+            </svg>
+        </div>
+
+        <h1>SANDAL</h1>
+        <p class="subtitle">Your AI Search Companion</p>
+
+        <form class="searchbar" id="searchForm">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round">
+                <circle cx="10.8" cy="10.8" r="6.8"/>
+                <path d="m16 16 5 5"/>
+            </svg>
+
+            <input id="searchInput" type="text"
+                   placeholder="Ask anything..." autocomplete="off"
+                   aria-label="Ask anything" required>
+
+            <button class="icon-btn" type="button" id="searchMicBtn"
+                    title="Search by voice" aria-label="Search by voice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round">
+                    <rect x="9" y="2" width="6" height="12" rx="3"/>
+                    <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>
+                </svg>
+            </button>
+
+            <button class="search-submit" type="submit"
+                    title="Search" aria-label="Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="M5 12h14"/>
+                    <path d="m12 5 7 7-7 7"/>
+                </svg>
+            </button>
+        </form>
+
+        <p class="tagline">Ask <span>•</span> Search <span>•</span> Get Answers</p>
+
+        <div class="voice-area">
+            <div class="wave-row">
+                <div class="soundwaves" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                </div>
+            </div>
+
+            <button class="big-mic" id="bigMicBtn"
+                    title="Tap to speak" aria-label="Tap to speak">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round">
+                    <rect x="9" y="2" width="6" height="12" rx="3"/>
+                    <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>
+                </svg>
+            </button>
+
+            <p class="voice-label">Tap to speak</p>
+            <p class="voice-status" id="voiceStatus" aria-live="polite"></p>
+        </div>
+
+        <section class="result-panel" id="resultPanel" aria-live="polite">
+            <h2 id="resultTitle">Search</h2>
+            <p id="resultText"></p>
+            <div class="result-actions">
+                <button class="small-action" id="webSearchBtn">Search on Google ↗</button>
+                <button class="small-action" id="copyBtn">Copy query</button>
+            </div>
+        </section>
+
+        <footer>POWERED BY CURIOSITY · BUILT FOR DISCOVERY</footer>
+    </section>
+</main>
+
+<!-- HISTORY MODAL -->
+<div class="modal-backdrop" id="historyModal">
+    <section class="modal" role="dialog" aria-modal="true"
+             aria-labelledby="historyTitle">
+        <div class="modal-header">
+            <h2 id="historyTitle">Search History</h2>
+            <button class="close-modal" data-close="historyModal"
+                    aria-label="Close">×</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <div class="modal-buttons">
+            <button class="secondary-btn" id="clearHistoryBtn">Clear history</button>
+            <button class="primary-btn" data-close="historyModal">Done</button>
+        </div>
+    </section>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-backdrop" id="loginModal">
+    <section class="modal" role="dialog" aria-modal="true"
+             aria-labelledby="loginTitle">
+        <div class="modal-header">
+            <h2 id="loginTitle">Welcome to SANDAL</h2>
+            <button class="close-modal" data-close="loginModal"
+                    aria-label="Close">×</button>
+        </div>
+        <form id="loginForm">
+            <div class="modal-field">
+                <label for="userName">Your name</label>
+                <input id="userName" type="text" placeholder="Enter your name"
+                       maxlength="50" required>
+            </div>
+            <div class="modal-field">
+                <label for="userEmail">Email address</label>
+                <input id="userEmail" type="email"
+                       placeholder="you@example.com" required>
+            </div>
+            <button class="primary-btn" type="submit">Continue</button>
+            <p class="helper-text">
+                This is a local demo profile stored in this browser.
+                It does not create a real account or verify your email.
+            </p>
+        </form>
+        <div class="modal-buttons">
+            <button class="secondary-btn" id="logoutBtn" style="display:none">
+                Log out
+            </button>
+        </div>
+    </section>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-backdrop" id="settingsModal">
+    <section class="modal" role="dialog" aria-modal="true"
+             aria-labelledby="settingsTitle">
+        <div class="modal-header">
+            <h2 id="settingsTitle">Settings</h2>
+            <button class="close-modal" data-close="settingsModal"
+                    aria-label="Close">×</button>
+        </div>
+
+        <div class="modal-field">
+            <label for="languageSelect">Voice recognition language</label>
+            <select id="languageSelect">
+                <option value="en-IN">English (India)</option>
+                <option value="te-IN">Telugu</option>
+                <option value="hi-IN">Hindi</option>
+                <option value="en-US">English (United States)</option>
+            </select>
+        </div>
+
+        <div class="modal-field">
+            <label for="glowSelect">Orange glow effects</label>
+            <select id="glowSelect">
+                <option value="on">On</option>
+                <option value="off">Off</option>
+            </select>
+        </div>
+
+        <button class="primary-btn" id="saveSettingsBtn">Save settings</button>
+        <p class="helper-text">
+            Voice recognition depends on your browser and microphone permission.
+        </p>
+    </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* ELEMENTS */
+
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const resultPanel = document.getElementById("resultPanel");
+const resultTitle = document.getElementById("resultTitle");
+const resultText = document.getElementById("resultText");
+const voiceStatus = document.getElementById("voiceStatus");
+const bigMicBtn = document.getElementById("bigMicBtn");
+const searchMicBtn = document.getElementById("searchMicBtn");
+
+const historyModal = document.getElementById("historyModal");
+const loginModal = document.getElementById("loginModal");
+const settingsModal = document.getElementById("settingsModal");
+
+let currentQuery = "";
+let recognition = null;
+let isListening = false;
+let toastTimer = null;
+
+/* SAFE LOCAL STORAGE HELPERS */
+
+function readStorage(key, fallback) {
+    try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function writeStorage(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    } catch (error) {
+        showToast("Browser storage is unavailable.");
+        return false;
+    }
+}
+
+/* TOAST */
+
+function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2600);
+}
+
+/* MODALS */
+
+function openModal(modal) {
+    modal.classList.add("show");
+}
+
+function closeModal(modal) {
+    modal.classList.remove("show");
+}
+
+document.querySelectorAll("[data-close]").forEach(button => {
+    button.addEventListener("click", () => {
+        const modal = document.getElementById(button.dataset.close);
+        if (modal) closeModal(modal);
+    });
+});
+
+document.querySelectorAll(".modal-backdrop").forEach(modal => {
+    modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal(modal);
+    });
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+        document.querySelectorAll(".modal-backdrop.show")
+            .forEach(closeModal);
+    }
+});
+
+/* SEARCH HISTORY */
+
+function getHistory() {
+    const history = readStorage("sandalHistory", []);
+    return Array.isArray(history) ? history : [];
+}
+
+function saveHistory(query) {
+    const history = getHistory();
+    history.unshift({
+        query,
+        date: new Date().toLocaleString()
+    });
+
+    writeStorage("sandalHistory", history.slice(0, 50));
+}
+
+function renderHistory() {
+    const historyList = document.getElementById("historyList");
+    const history = getHistory();
+
+    historyList.replaceChildren();
+
+    if (history.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+        empty.textContent = "No searches yet. Your recent searches will appear here.";
+        historyList.appendChild(empty);
+        return;
+    }
+
+    history.forEach(item => {
+        const button = document.createElement("button");
+        button.className = "history-item";
+
+        const query = document.createElement("div");
+        query.textContent = item.query;
+
+        const date = document.createElement("div");
+        date.style.cssText = "font-size:11px;color:#938579;margin-top:6px";
+        date.textContent = item.date || "";
+
+        button.append(query, date);
+
+        button.addEventListener("click", () => {
+            searchInput.value = item.query;
+            closeModal(historyModal);
+            performSearch(item.query);
+        });
+
+        historyList.appendChild(button);
+    });
+}
+
+function showHistory() {
+    renderHistory();
+    openModal(historyModal);
+}
+
+document.getElementById("historyBtn").addEventListener("click", showHistory);
+document.getElementById("sideHistoryBtn").addEventListener("click", showHistory);
+
+document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+    writeStorage("sandalHistory", []);
+    renderHistory();
+    showToast("Search history cleared.");
+});
+
+/* SEARCH */
+
+function performSearch(query) {
+    query = query.trim();
+
+    if (!query) {
+        showToast("Please enter a question first.");
+        searchInput.focus();
+        return;
+    }
+
+    currentQuery = query;
+    searchInput.value = query;
+
+    resultTitle.textContent = "Your search";
+    resultText.textContent =
+        "You asked: “" + query + "”. Choose “Search on Google” to view web results.";
+
+    resultPanel.classList.add("show");
+    saveHistory(query);
+
+    document.getElementById("webSearchBtn").onclick = () => {
+        const url = "https://www.google.com/search?q=" +
+                    encodeURIComponent(currentQuery);
+        window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    document.getElementById("copyBtn").onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(currentQuery);
+            showToast("Query copied.");
+        } catch (error) {
+            searchInput.focus();
+            searchInput.select();
+
+            try {
+                const copied = document.execCommand("copy");
+                showToast(copied ? "Query copied." : "Please copy the selected text.");
+            } catch (copyError) {
+                showToast("Please copy the query manually.");
+            }
+        }
+    };
+
+    voiceStatus.textContent = "";
+}
+
+searchForm.addEventListener("submit", event => {
+    event.preventDefault();
+    performSearch(searchInput.value);
+});
+
+/* HOME BUTTON */
+
+document.getElementById("homeBtn").addEventListener("click", () => {
+    searchInput.value = "";
+    resultPanel.classList.remove("show");
+    voiceStatus.textContent = "";
+    searchInput.focus();
+    showToast("Home");
+});
+
+/* LOGIN DEMO */
+
+function updateLoginUI() {
+    const profile = readStorage("sandalProfile", null);
+    const label = document.getElementById("loginLabel");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    if (profile && profile.name) {
+        label.textContent = profile.name.split(" ")[0];
+        logoutBtn.style.display = "block";
+        document.getElementById("userName").value = profile.name;
+        document.getElementById("userEmail").value = profile.email || "";
+    } else {
+        label.textContent = "Login";
+        logoutBtn.style.display = "none";
+        document.getElementById("userName").value = "";
+        document.getElementById("userEmail").value = "";
+    }
+}
+
+document.getElementById("loginBtn").addEventListener("click", () => {
+    updateLoginUI();
+    openModal(loginModal);
+});
+
+document.getElementById("loginForm").addEventListener("submit", event => {
+    event.preventDefault();
+
+    const name = document.getElementById("userName").value.trim();
+    const email = document.getElementById("userEmail").value.trim();
+
+    if (!name || !email) {
+        showToast("Please enter your name and email.");
+        return;
+    }
+
+    if (!writeStorage("sandalProfile", { name, email })) return;
+
+    updateLoginUI();
+    closeModal(loginModal);
+    showToast("Welcome, " + name + "!");
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    try {
+        localStorage.removeItem("sandalProfile");
+    } catch (error) {
+        showToast("Could not clear profile.");
+        return;
+    }
+
+    updateLoginUI();
+    closeModal(loginModal);
+    showToast("Logged out of this demo profile.");
+});
+
+/* SETTINGS */
+
+function loadSettings() {
+    const settings = readStorage("sandalSettings", {
+        language: "en-IN",
+        glow: "on"
+    });
+
+    document.getElementById("languageSelect").value =
+        settings.language || "en-IN";
+
+    document.getElementById("glowSelect").value =
+        settings.glow || "on";
+
+    document.body.classList.toggle("no-glow", settings.glow === "off");
+}
+
+document.getElementById("settingsBtn").addEventListener("click", () => {
+    loadSettings();
+    openModal(settingsModal);
+});
+
+document.getElementById("saveSettingsBtn").addEventListener("click", () => {
+    const settings = {
+        language: document.getElementById("languageSelect").value,
+        glow: document.getElementById("glowSelect").value
+    };
+
+    if (!writeStorage("sandalSettings", settings)) return;
+
+    loadSettings();
+    closeModal(settingsModal);
+    showToast("Settings saved.");
+});
+
+/* VOICE SEARCH */
+
+function startVoiceSearch() {
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        showToast("Voice recognition is not supported in this browser. Try Chrome.");
+        voiceStatus.textContent = "Voice recognition is not supported here.";
+        return;
+    }
+
+    if (isListening && recognition) {
+        recognition.stop();
+        return;
+    }
+
+    recognition = new SpeechRecognition();
+
+    const settings = readStorage("sandalSettings", {
+        language: "en-IN",
+        glow: "on"
+    });
+
+    recognition.lang = settings.language || "en-IN";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+        isListening = true;
+        bigMicBtn.classList.add("listening");
+        voiceStatus.textContent = "Listening... Speak now.";
+    };
+
+    recognition.onresult = event => {
+        let transcript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+
+        searchInput.value = transcript.trim();
+        voiceStatus.textContent = "Heard: " + transcript;
+
+        const lastResult = event.results[event.results.length - 1];
+        if (lastResult && lastResult.isFinal && transcript.trim()) {
+            performSearch(transcript.trim());
+        }
+    };
+
+    recognition.onerror = event => {
+        const messages = {
+            "not-allowed": "Please allow microphone access in your browser.",
+            "no-speech": "No speech detected. Please try again.",
+            "audio-capture": "No microphone was found.",
+            "network": "Voice recognition needs a network connection."
+        };
+
+        voiceStatus.textContent =
+            messages[event.error] || "Voice recognition error: " + event.error;
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+        bigMicBtn.classList.remove("listening");
+    };
+
+    try {
+        recognition.start();
+    } catch (error) {
+        isListening = false;
+        bigMicBtn.classList.remove("listening");
+        voiceStatus.textContent = "Could not start voice recognition. Try again.";
+    }
+}
+
+bigMicBtn.addEventListener("click", startVoiceSearch);
+searchMicBtn.addEventListener("click", startVoiceSearch);
+
+document.getElementById("sideMicBtn").addEventListener("click", startVoiceSearch);
+
+/* INITIALIZE */
+
+updateLoginUI();
+loadSettings();
+</script>
+
+<style>
+/* Glow toggle controlled by Settings */
+body.no-glow .light {
+    opacity: .2;
+    box-shadow: none;
+    animation: none;
+}
+
+body.no-glow .hero-logo,
+body.no-glow .big-mic,
+body.no-glow .searchbar,
+body.no-glow .search-submit {
+    box-shadow: none;
+    animation: none;
+}
+</style>
+
+</body>
+</html>
